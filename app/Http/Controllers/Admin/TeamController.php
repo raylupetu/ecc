@@ -25,25 +25,31 @@ class TeamController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'role_fr' => 'required|string|max:255',
-            'role_en' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'bio_fr' => 'nullable|string',
-            'bio_en' => 'nullable|string',
-            'order' => 'nullable|integer',
+        \Log::info('Team Store Attempt', [
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
 
-        $data = $request->only([
-            'name', 'role_fr', 'role_en', 'email', 'phone', 'bio_fr', 'bio_en', 'order'
-        ]);
+        try {
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+                'role_fr' => 'required|string|max:255',
+                'role_en' => 'required|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'nullable|string|max:20',
+                'bio_fr' => 'nullable|string',
+                'bio_en' => 'nullable|string',
+                'order' => 'nullable|integer',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Team Store Validation Failed', $e->errors());
+            throw $e;
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('team', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         TeamMember::create($data);
@@ -60,17 +66,28 @@ class TeamController extends Controller
 
     public function update(Request $request, TeamMember $team)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'role_fr' => 'required|string|max:255',
-            'role_en' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'bio_fr' => 'nullable|string',
-            'bio_en' => 'nullable|string',
-            'order' => 'nullable|integer',
+        \Log::info('Team Update Attempt', [
+            'id' => $team->id,
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
+
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'role_fr' => 'required|string|max:255',
+                'role_en' => 'required|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'nullable|string|max:20',
+                'bio_fr' => 'nullable|string',
+                'bio_en' => 'nullable|string',
+                'order' => 'nullable|integer',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Team Update Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data = $request->only([
             'name', 'role_fr', 'role_en', 'email', 'phone', 'bio_fr', 'bio_en', 'order'
@@ -78,11 +95,11 @@ class TeamController extends Controller
 
         if ($request->hasFile('image')) {
             if ($team->image) {
-                $oldPath = str_replace('/storage/', '', $team->image);
+                $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $team->image);
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('team', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         $team->update($data);
@@ -93,7 +110,7 @@ class TeamController extends Controller
     public function destroy(TeamMember $team)
     {
         if ($team->image) {
-            $oldPath = str_replace('/storage/', '', $team->image);
+            $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $team->image);
             Storage::disk('public')->delete($oldPath);
         }
         $team->delete();

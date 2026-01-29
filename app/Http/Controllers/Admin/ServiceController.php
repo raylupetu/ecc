@@ -25,19 +25,28 @@ class ServiceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title_fr' => 'required|string|max:255',
-            'title_en' => 'required|string|max:255',
-            'description_fr' => 'required|string',
-            'description_en' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        \Log::info('Service Store Attempt', [
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
 
-        $data = $request->only(['title_fr', 'title_en', 'description_fr', 'description_en', 'is_active']);
+        try {
+            $data = $request->validate([
+                'title_fr' => 'required|string|max:255',
+                'title_en' => 'required|string|max:255',
+                'description_fr' => 'required|string',
+                'description_en' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'is_active' => 'boolean',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Service Store Validation Failed', $e->errors());
+            throw $e;
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('services', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         Service::create($data);
@@ -54,13 +63,25 @@ class ServiceController extends Controller
 
     public function update(Request $request, Service $service)
     {
-        $request->validate([
-            'title_fr' => 'required|string|max:255',
-            'title_en' => 'required|string|max:255',
-            'description_fr' => 'required|string',
-            'description_en' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        \Log::info('Service Update Attempt', [
+            'id' => $service->id,
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
+
+        try {
+            $request->validate([
+                'title_fr' => 'required|string|max:255',
+                'title_en' => 'required|string|max:255',
+                'description_fr' => 'required|string',
+                'description_en' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'is_active' => 'boolean',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Service Update Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data = $request->only(['title_fr', 'title_en', 'description_fr', 'description_en', 'is_active']);
 
@@ -70,7 +91,7 @@ class ServiceController extends Controller
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('services', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         $service->update($data);
@@ -81,7 +102,7 @@ class ServiceController extends Controller
     public function destroy(Service $service)
     {
         if ($service->image) {
-            $oldPath = str_replace('/storage/', '', $service->image);
+            $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $service->image);
             Storage::disk('public')->delete($oldPath);
         }
         $service->delete();

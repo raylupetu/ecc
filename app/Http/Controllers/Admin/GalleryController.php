@@ -25,17 +25,25 @@ class GalleryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title_fr' => 'nullable|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+        \Log::info('Gallery Store Attempt', [
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
 
-        $data = $request->only(['title_fr', 'title_en']);
+        try {
+            $data = $request->validate([
+                'title_fr' => 'nullable|string|max:255',
+                'title_en' => 'nullable|string|max:255',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Gallery Store Validation Failed', $e->errors());
+            throw $e;
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('gallery', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         Gallery::create($data);
@@ -52,21 +60,32 @@ class GalleryController extends Controller
 
     public function update(Request $request, Gallery $gallery)
     {
-        $request->validate([
-            'title_fr' => 'nullable|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+        \Log::info('Gallery Update Attempt', [
+            'id' => $gallery->id,
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
+
+        try {
+            $request->validate([
+                'title_fr' => 'nullable|string|max:255',
+                'title_en' => 'nullable|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Gallery Update Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data = $request->except(['image', '_method']);
 
         if ($request->hasFile('image')) {
             if ($gallery->image) {
-                $oldPath = str_replace('/storage/', '', $gallery->image);
+                $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $gallery->image);
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('gallery', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         $gallery->update($data);
@@ -77,7 +96,7 @@ class GalleryController extends Controller
     public function destroy(Gallery $gallery)
     {
         if ($gallery->image) {
-            $oldPath = str_replace('/storage/', '', $gallery->image);
+            $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $gallery->image);
             Storage::disk('public')->delete($oldPath);
         }
         $gallery->delete();

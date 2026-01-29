@@ -35,6 +35,9 @@ class SettingController extends Controller
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
+        \Cache::forget('shared_settings');
+        \Cache::forget('homepage_settings');
+
         return redirect()->back()->with('success', 'Paramètres mis à jour.');
     }
 }

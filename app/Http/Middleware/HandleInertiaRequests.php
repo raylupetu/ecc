@@ -47,7 +47,11 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'locale' => app()->getLocale(),
-            'settings' => \App\Models\Setting::all()->pluck('value', 'key'),
+            'settings' => \Cache::remember('shared_settings', 3600, function () {
+                return \App\Models\Setting::whereIn('key', [
+                    'contact_email', 'contact_phone', 'address', 'site_name', 'logo'
+                ])->pluck('value', 'key');
+            }),
         ];
     }
 }

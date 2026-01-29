@@ -37,7 +37,10 @@ export default function Index({ settings }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('settings.update'));
+        post(route('settings.update'), {
+            preserveScroll: true,
+            preserveState: true,
+        });
     };
 
     return (

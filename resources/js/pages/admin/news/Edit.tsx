@@ -37,7 +37,10 @@ export default function Edit({ news }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('news.update', news.id));
+        post(route('news.update', news.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

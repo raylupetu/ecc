@@ -74,6 +74,15 @@ export default function Hero({ slides: dbSlides }: { slides?: any[] }) {
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-[10000ms] scale-110"
                         style={{ backgroundImage: `url(${slide.image})` }}
                     >
+                        {/* Preload first slide image */}
+                        <img
+                            src={slide.image}
+                            alt=""
+                            className="hidden"
+                            loading={currentSlide === 0 ? "eager" : "lazy"}
+                            // @ts-ignore
+                            fetchPriority={currentSlide === 0 ? "high" : "low"}
+                        />
                         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
                     </div>
                     <div className="relative h-full flex items-center justify-center text-center px-4">

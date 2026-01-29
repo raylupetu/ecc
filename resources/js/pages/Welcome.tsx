@@ -1,5 +1,5 @@
-import { Head } from '@inertiajs/react';
-import PublicLayout from '@/layouts/PublicLayout';
+import { Head, router } from '@inertiajs/react';
+import { useEffect } from 'react';
 import Hero from '@/components/Hero';
 import About from '@/components/About';
 import Activities from '@/components/Activities';
@@ -31,8 +31,21 @@ export default function Welcome({
     newsItems,
     settings
 }: Props) {
+    // Background polling for "instant" updates
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['services', 'galleryImages', 'heroSlides', 'bibleVerses', 'teamMembers', 'newsItems', 'settings'],
+                preserveScroll: true,
+                preserveState: true
+            });
+        }, 60000); // every 60 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
-        <PublicLayout>
+        <>
             <Head title="Accueil" />
 
             <Hero slides={heroSlides} />
@@ -50,7 +63,6 @@ export default function Welcome({
                 phone={settings.contact_phone}
                 address={settings.address}
             />
-
-        </PublicLayout>
+        </>
     );
 }

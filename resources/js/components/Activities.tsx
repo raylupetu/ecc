@@ -100,6 +100,7 @@ export default function Activities({ services }: Props) {
                                                 src={activity.image}
                                                 className="w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 cursor-zoom-in"
                                                 alt={activity.title}
+                                                loading="lazy"
                                                 onClick={() => setSelectedImage(activity.image)}
                                             />
                                             <div

@@ -32,7 +32,10 @@ export default function Edit({ gallery }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('gallery.update', gallery.id));
+        post(route('gallery.update', gallery.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

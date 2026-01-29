@@ -22,7 +22,9 @@ class HomeController extends Controller
             'bibleVerses' => BibleVerse::orderBy('order')->get(),
             'teamMembers' => TeamMember::orderBy('order')->get(),
             'newsItems' => NewsItem::latest()->take(6)->get(),
-            'settings' => Setting::all()->pluck('value', 'key'),
+            'settings' => \Cache::remember('homepage_settings', 3600, function () {
+                return Setting::all()->pluck('value', 'key');
+            }),
         ]);
     }
 }

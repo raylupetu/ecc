@@ -25,27 +25,31 @@ class HeroSlideController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
-            'title_fr' => 'nullable|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'subtitle_fr' => 'nullable|string|max:255',
-            'subtitle_en' => 'nullable|string|max:255',
-            'button_text_fr' => 'nullable|string|max:255',
-            'button_text_en' => 'nullable|string|max:255',
-            'button_url' => 'nullable|string|max:255',
-            'order' => 'nullable|integer',
+        \Log::info('HeroSlide Store Attempt', [
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
 
-        $data = $request->only([
-            'title_fr', 'title_en', 'subtitle_fr', 'subtitle_en', 'button_text_fr', 
-            'button_text_en', 'button_url', 'order'
-        ]);
-
+        try {
+            $data = $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+                'title_fr' => 'nullable|string|max:255',
+                'title_en' => 'nullable|string|max:255',
+                'subtitle_fr' => 'nullable|string|max:255',
+                'subtitle_en' => 'nullable|string|max:255',
+                'button_text_fr' => 'nullable|string|max:255',
+                'button_text_en' => 'nullable|string|max:255',
+                'button_url' => 'nullable|string|max:255',
+                'order' => 'nullable|integer',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('HeroSlide Store Validation Failed', $e->errors());
+            throw $e;
+        }
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('hero', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         HeroSlide::create($data);
@@ -62,45 +66,65 @@ class HeroSlideController extends Controller
 
     public function update(Request $request, HeroSlide $heroSlide)
     {
-        $request->validate([
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
-            'title_fr' => 'nullable|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'subtitle_fr' => 'nullable|string|max:255',
-            'subtitle_en' => 'nullable|string|max:255',
-            'button_text_fr' => 'nullable|string|max:255',
-            'button_text_en' => 'nullable|string|max:255',
-            'button_url' => 'nullable|string|max:255',
-            'order' => 'nullable|integer',
+        \Log::info('HeroSlide Update Attempt', [
+            'id' => $heroSlide->id,
+            'has_file' => $request->hasFile('image'),
+            'content_length' => $request->server('CONTENT_LENGTH'),
+            'all_keys' => array_keys($request->all()),
         ]);
+
+        try {
+            $request->validate([
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+                'title_fr' => 'nullable|string|max:255',
+                'title_en' => 'nullable|string|max:255',
+                'subtitle_fr' => 'nullable|string|max:255',
+                'subtitle_en' => 'nullable|string|max:255',
+                'button_text_fr' => 'nullable|string|max:255',
+                'button_text_en' => 'nullable|string|max:255',
+                'button_url' => 'nullable|string|max:255',
+                'order' => 'nullable|integer',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('HeroSlide Update Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data = $request->only([
             'title_fr', 'title_en', 'subtitle_fr', 'subtitle_en', 'button_text_fr', 
             'button_text_en', 'button_url', 'order'
         ]);
 
-
         if ($request->hasFile('image')) {
-            if ($heroSlide->image && !str_contains($heroSlide->image, 'unsplash.com')) {
-                $oldPath = str_replace('/storage/', '', $heroSlide->image);
+            // Delete old image
+            if ($heroSlide->image) {
+                $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $heroSlide->image);
                 Storage::disk('public')->delete($oldPath);
             }
+
             $path = $request->file('image')->store('hero', 'public');
-            $data['image'] = Storage::url($path);
+            // Store as relative path to be more robust
+            $data['image'] = '/storage/' . $path;
+            
+            \Log::info('New image stored', ['path' => $data['image']]);
         }
 
         $heroSlide->update($data);
 
-        return redirect()->route('hero-slides.index')->with('success', 'Slide mis à jour.');
+        return redirect()->route('hero-slides.index')->with('success', 'Slide mis à jour avec succès.');
     }
 
     public function destroy(HeroSlide $heroSlide)
     {
-        if ($heroSlide->image && !str_contains($heroSlide->image, 'unsplash.com')) {
-            $oldPath = str_replace('/storage/', '', $heroSlide->image);
-            Storage::disk('public')->delete($oldPath);
+        if ($heroSlide->image && !str_starts_with($heroSlide->image, 'http')) {
+            $pathToDelete = str_replace('/storage/', '', $heroSlide->image);
+            Storage::disk('public')->delete($pathToDelete);
+        } elseif ($heroSlide->image && str_contains($heroSlide->image, url('/storage'))) {
+            $pathToDelete = str_replace(url('/storage') . '/', '', $heroSlide->image);
+            Storage::disk('public')->delete($pathToDelete);
         }
+        
         $heroSlide->delete();
-        return redirect()->route('hero-slides.index')->with('success', 'Slide supprimé.');
+        return redirect()->route('hero-slides.index')->with('success', 'Slide supprimé avec succès.');
     }
 }

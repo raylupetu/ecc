@@ -43,7 +43,10 @@ export default function Edit({ member }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('team.update', member.id));
+        post(route('team.update', member.id), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +96,7 @@ export default function Edit({ member }: Props) {
                                         <Input
                                             type="number"
                                             value={data.order}
-                                            onChange={e => setData('order', parseInt(e.target.value))}
+                                            onChange={e => setData('order', e.target.value ? parseInt(e.target.value) : 0)}
                                             className="rounded-xl border-gray-200 focus:ring-[#D90429] focus:border-[#D90429] pl-10"
                                         />
                                         <Hash className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />

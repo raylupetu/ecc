@@ -58,6 +58,7 @@ export default function News({ items }: { items?: any[] }) {
                                         src={itemImage}
                                         alt={title}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        loading="lazy"
                                         onClick={() => setSelectedImage(itemImage)}
                                     />
                                     <div

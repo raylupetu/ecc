@@ -46,9 +46,9 @@ export default function Header() {
                 <div className="flex items-center space-x-3 cursor-pointer" onClick={() => scrollToSection('hero')}>
                     <div className={`p-2 rounded-xl transition-colors ${isScrolled ? 'bg-[#D90429]/10' : 'bg-white/10'}`}>
                         {settings?.logo ? (
-                            <img src={settings.logo} className="w-8 h-8 object-contain" alt="Logo" />
+                            <img src={settings.logo} className="w-12 h-12 object-contain" alt="Logo" />
                         ) : (
-                            <Church className={`w-8 h-8 transition-colors ${isScrolled ? 'text-[#D90429]' : 'text-white'}`} />
+                            <Church className={`w-12 h-12 transition-colors ${isScrolled ? 'text-[#D90429]' : 'text-white'}`} />
                         )}
                     </div>
                     <div className="flex flex-col">

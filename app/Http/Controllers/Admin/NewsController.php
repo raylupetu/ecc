@@ -25,24 +25,30 @@ class NewsController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'title_fr' => 'required|string|max:255',
-            'title_en' => 'required|string|max:255',
-            'content_fr' => 'required|string',
-            'content_en' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'published_at' => 'nullable|date',
+        \Log::info('News Store Attempt', [
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
 
-        $data = $request->only([
-            'title_fr', 'title_en', 'content_fr', 'content_en', 'published_at'
-        ]);
+        try {
+            $data = $request->validate([
+                'title_fr' => 'required|string|max:255',
+                'title_en' => 'required|string|max:255',
+                'content_fr' => 'required|string',
+                'content_en' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'published_at' => 'nullable|date',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('News Store Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data['published_at'] = $data['published_at'] ?? now();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('news', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         NewsItem::create($data);
@@ -59,27 +65,37 @@ class NewsController extends Controller
 
     public function update(Request $request, NewsItem $news)
     {
-        $request->validate([
-            'title_fr' => 'required|string|max:255',
-            'title_en' => 'required|string|max:255',
-            'content_fr' => 'required|string',
-            'content_en' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'published_at' => 'nullable|date',
+        \Log::info('News Update Attempt', [
+            'id' => $news->id,
+            'has_file' => $request->hasFile('image'),
+            'all_keys' => array_keys($request->all()),
         ]);
+
+        try {
+            $request->validate([
+                'title_fr' => 'required|string|max:255',
+                'title_en' => 'required|string|max:255',
+                'content_fr' => 'required|string',
+                'content_en' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'published_at' => 'nullable|date',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('News Update Validation Failed', $e->errors());
+            throw $e;
+        }
 
         $data = $request->only([
             'title_fr', 'title_en', 'content_fr', 'content_en', 'published_at'
         ]);
 
-
         if ($request->hasFile('image')) {
             if ($news->image) {
-                $oldPath = str_replace('/storage/', '', $news->image);
+                $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $news->image);
                 Storage::disk('public')->delete($oldPath);
             }
             $path = $request->file('image')->store('news', 'public');
-            $data['image'] = Storage::url($path);
+            $data['image'] = '/storage/' . $path;
         }
 
         $news->update($data);
@@ -90,7 +106,7 @@ class NewsController extends Controller
     public function destroy(NewsItem $news)
     {
         if ($news->image) {
-            $oldPath = str_replace('/storage/', '', $news->image);
+            $oldPath = str_replace(['/storage/', url('/storage') . '/'], '', $news->image);
             Storage::disk('public')->delete($oldPath);
         }
         $news->delete();

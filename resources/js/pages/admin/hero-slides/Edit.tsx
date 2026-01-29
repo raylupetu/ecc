@@ -43,7 +43,13 @@ export default function Edit({ slide }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('hero-slides.update', slide.id));
+        post(route('hero-slides.update', slide.id), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                // Clear state if needed or show feedback
+            },
+        });
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +187,7 @@ export default function Edit({ slide }: Props) {
                                             <Input
                                                 type="number"
                                                 value={data.order}
-                                                onChange={e => setData('order', parseInt(e.target.value))}
+                                                onChange={e => setData('order', e.target.value ? parseInt(e.target.value) : 0)}
                                                 className="rounded-xl border-gray-200 pl-10"
                                             />
                                             <Hash className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />

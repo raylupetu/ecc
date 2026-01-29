@@ -65,6 +65,7 @@ export default function Team({ members: dbMembers }: { members?: any[] }) {
                                         src={memberImage}
                                         alt={member.name}
                                         className="w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 cursor-zoom-in"
+                                        loading="lazy"
                                         onClick={() => setSelectedImage(memberImage)}
                                     />
                                     <div
